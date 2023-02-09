@@ -8,7 +8,7 @@ class FusionModule(MIMOPipelineModule):
     def spin_once(self, data_packet):
         output = self.fusion.fuse(data_packet)
         # TODO: if you uncomment this, we never reach gui/fusion loop, but if you comment it never stops.
-        if self.fusion.stop_condition():
+        if output is None or self.fusion.stop_condition():
             print("Stopping fusion module!")
             super().shutdown_module()
         #if not output:

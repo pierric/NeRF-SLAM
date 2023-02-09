@@ -92,7 +92,7 @@ class NerfFusion:
         # NGP Training params:
         self.ngp.shall_train = True
         self.ngp.dynamic_res = True
-        self.ngp.dynamic_res_target_fps = 15
+        self.ngp.dynamic_res_target_fps = 5
         self.ngp.camera_smoothing = True
         #self.ngp.nerf.training.near_distance = 0.2
         #self.ngp.nerf.training.density_grid_decay = 1.0
@@ -117,6 +117,8 @@ class NerfFusion:
 
         # Fit vol once to init gui
         self.fit_volume_once()
+
+        self.exit = False
 
     def process_data(self, packet):
         # GROUND_TRUTH Fitting
@@ -259,6 +261,11 @@ class NerfFusion:
         # TODO: ideally set it slightly ahead!
         #self.render_path_i += 1
         #self.ngp.camera_matrix = self.render_path[self.render_path_i][:3,:]
+
+        if self.exit:
+            print("############## exit ###########3")
+            return None
+
         return True  # return None if we want to shutdown
 
     def stop_condition(self):
@@ -301,7 +308,10 @@ class NerfFusion:
             self.ngp.apply_camera_smoothing(1000.0/self.fps)
 
     def fit_volume_once(self):
-        self.ngp.frame()
+        if not self.ngp.frame():
+            print("Windows closed")
+            self.exit = True
+
         dt = self.ngp.elapsed_training_time
         #print(f"Iter={self.total_iters}; Dt={dt}; Loss={self.ngp.loss}")
         if self.anneal and self.total_iters % self.anneal_every_iters == 0:

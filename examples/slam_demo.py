@@ -104,12 +104,15 @@ def run(args):
         if slam:
             slam_module.register_output_queue(slam_output_queue_for_fusion)
             fusion_module.register_input_queue("slam", slam_output_queue_for_fusion)
-        
+
         if (args.fusion == 'nerf' and not slam) or (args.fusion != 'nerf' and args.eval):
             # Only used for evaluation, or in case we do not use slam (for nerf)
             data_provider_module.register_output_queue(data_for_fusion_output_queue)
             fusion_module.register_input_queue("data", data_for_fusion_output_queue)
 
+        ## debug the fusion output
+        #if args.fusion == "nerf" and slam:
+        #    fusion_module.register_output_queue(fusion_output_queue_for_gui)
 
     # Create interactive Gui
     gui = args.gui and args.fusion != 'nerf' # nerf has its own gui
@@ -141,7 +144,7 @@ def run(args):
         if gui: gui_thread.start()
 
         # Runs in main thread
-        if slam: 
+        if slam:
             slam_module.spin() # visualizer should be the main spin, but pytorch has a memory bug/leak if threaded...
             slam_module.shutdown_module()
             ic("Deleting SLAM module to free memory")
@@ -183,11 +186,21 @@ def run(args):
             and (not gui or gui_module.spin()):
             continue
 
+        #if args.fusion == "nerf" and slam:
+        #    while True:
+        #        item = fusion_output_queue_for_gui.get_nowait()
+        #        print(f'item {item}')
+        #        fusion_output_queue_for_gui.task_done()
+
         # Then gui runs indefinitely until user closes window
         ok = True
         while ok:
             if gui: ok &= gui_module.spin()
             if fusion: ok &= fusion_module.spin()
+
+        fusion_module.fusion.ngp.save_snapshot("snapshot.msgpack", True)
+        print("snapshot.msgpack saved.")
+        fusion_module.fusion.print_ngp_info()
 
     # Delete everything and clean memory
 
