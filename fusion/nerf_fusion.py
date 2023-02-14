@@ -239,20 +239,23 @@ class NerfFusion:
     # Main LOOP
     def fuse(self, data_packets):
         fit = False
-        if data_packets:  # data_packets is a dict of data_packets
-            for name, packet in data_packets.items():
-                if name == "data":
-                    fit = self.process_data(packet)
-                elif name == "slam":
-                    fit = self.process_slam(packet)
-                    #self.ngp.set_camera_to_training_view(self.ngp.nerf.training.n_images_for_training-1) 
-                else:
-                    raise NotImplementedError(f"process_{name} not implemented...")
-            if fit:
+        try:
+            if data_packets:  # data_packets is a dict of data_packets
+                for name, packet in data_packets.items():
+                    if name == "data":
+                        fit = self.process_data(packet)
+                    elif name == "slam":
+                        fit = self.process_slam(packet)
+                        #self.ngp.set_camera_to_training_view(self.ngp.nerf.training.n_images_for_training-1) 
+                    else:
+                        raise NotImplementedError(f"process_{name} not implemented...")
+                if fit:
+                    self.fit_volume()
+            else:
+                #print("No packet received in fusion module.")
                 self.fit_volume()
-        else:
-            #print("No packet received in fusion module.")
-            self.fit_volume()
+        except KeyboardInterrupt:
+            self.exit = True
 
         # Set the gui to a given pose, and follow the gt pose, but modulate the speed somehow...
         # a) allow to provide a pose (from gt)
